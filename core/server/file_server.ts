@@ -20,6 +20,7 @@ export async function serveZip(path: string, opts: ServeZipOptions = {}) {
 }
 
 export interface ServeZipFilesOptions {
+  fsRoot?: string;
   urlRoot?: string;
   quiet?: string;
 }
@@ -40,6 +41,9 @@ export async function serveZipFiles(
     }
     if (normalizedPath.startsWith("/")) {
       normalizedPath = normalizedPath.replace("/", "");
+    }
+    if (opts.fsRoot) {
+      normalizedPath = opts.fsRoot + "/" + normalizedPath;
     }
     if (zipfiles.has(normalizedPath)) {
       response = await serveZipFile(req, zipfiles.get(normalizedPath)!);
