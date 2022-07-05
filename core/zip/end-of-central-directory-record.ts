@@ -1,5 +1,5 @@
 import { ZIP_CENTRAL_RECORD } from "./const.ts";
-import { FsOffset } from "./mod.ts";
+import { FsOffset } from "../types.ts";
 
 export async function getCRecordView(
   file: Deno.FsFile,
