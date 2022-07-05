@@ -1,10 +1,12 @@
 import { extname, posix } from "https://deno.land/std@0.146.0/path/mod.ts";
+import { red } from "https://deno.land/std@0.146.0/fmt/colors.ts";
 import { contentType } from "https://deno.land/std@0.146.0/media_types/mod.ts";
 import {
   Status,
   STATUS_TEXT,
 } from "https://deno.land/std@0.146.0/http/http_status.ts";
-import { ZipFile, ZipFiles } from "../zip/mod.ts";
+import { disassembleZip, ZipFile, ZipFiles } from "../zip/mod.ts";
+import { serve, ServeInit } from "https://deno.land/std@0.146.0/http/server.ts";
 
 // from https://deno.land/std@0.146.0/http/file_server.ts
 export function normalizeURL(url: string): string {
@@ -41,22 +43,73 @@ export function normalizeURL(url: string): string {
     : normalizedUrl;
 }
 
-export function serveFallback(_req: Request): Promise<Response> {
+// from https://deno.land/std@0.146.0/http/file_server.ts
+function serveFallback(_req: Request, e: Error): Promise<Response> {
+  if (e instanceof URIError) {
+    return Promise.resolve(
+      new Response(STATUS_TEXT[Status.BadRequest], {
+        status: Status.BadRequest,
+        statusText: STATUS_TEXT[Status.BadRequest],
+      }),
+    );
+  } else if (e instanceof Deno.errors.NotFound) {
+    return Promise.resolve(
+      new Response(STATUS_TEXT[Status.NotFound], {
+        status: Status.NotFound,
+        statusText: STATUS_TEXT[Status.NotFound],
+      }),
+    );
+  }
   return Promise.resolve(
-    new Response(STATUS_TEXT[Status.NotFound], {
-      status: Status.BadRequest,
-      statusText: STATUS_TEXT[Status.NotFound],
+    new Response(STATUS_TEXT[Status.InternalServerError], {
+      status: Status.InternalServerError,
+      statusText: STATUS_TEXT[Status.InternalServerError],
     }),
   );
 }
 
-export async function serveZipFiles(req: Request, zipfiles: ZipFiles) {
+export interface ServeZipOptions extends ServeInit, ServeZipFilesOptions {}
+export async function serveZip(path: string, opts: ServeZipOptions = {}) {
+  const zip = await Deno.open(path);
+  const zipfiles = await disassembleZip(zip);
+  if (zipfiles) {
+    serve((req: Request): Promise<Response> => {
+      return serveZipFiles(req, zipfiles, opts);
+    }, opts);
+  }
+}
+
+export interface ServeZipFilesOptions {
+  urlRoot?: string;
+  quiet?: string;
+}
+
+export async function serveZipFiles(
+  req: Request,
+  zipfiles: ZipFiles,
+  opts: ServeZipFilesOptions = {},
+) {
   let response: Response;
-  const normalizedPath = normalizeURL(req.url).slice(1);
-  if (zipfiles.has(normalizedPath)) {
-    response = await serveZipFile(req, zipfiles.get(normalizedPath)!);
-  } else {
-    response = await serveFallback(req);
+  try {
+    let normalizedPath = normalizeURL(req.url);
+    if (opts.urlRoot) {
+      if (normalizedPath.startsWith("/" + opts.urlRoot)) {
+        normalizedPath = normalizedPath.replace(opts.urlRoot, "");
+      } else {
+        throw new Deno.errors.NotFound();
+      }
+    } else {
+      normalizedPath = normalizedPath.replace("/", "");
+    }
+    if (zipfiles.has(normalizedPath)) {
+      response = await serveZipFile(req, zipfiles.get(normalizedPath)!);
+    } else {
+      throw new Deno.errors.NotFound();
+    }
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error("[non-error thrown]");
+    if (!opts.quiet) console.error(red(err.message));
+    response = await serveFallback(req, err);
   }
   return response!;
 }
