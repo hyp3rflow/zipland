@@ -4,3 +4,4 @@ export * from "./zip/local-file-header.ts";
 export * from "./zip/mod.ts";
 
 export * from "./server/file_server.ts";
+export * from "./types.ts";
