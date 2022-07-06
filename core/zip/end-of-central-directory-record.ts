@@ -1,8 +1,8 @@
 import { ZIP_CENTRAL_RECORD } from "./const.ts";
-import { FsOffset } from "../types.ts";
+import { File, FsOffset } from "../types.ts";
 
 export async function getCRecordView(
-  file: Deno.FsFile,
+  file: File,
 ): Promise<DataView | null> {
   const crecordOffset = await getCRecordOffset(file);
   if (!crecordOffset) return null;
@@ -12,7 +12,7 @@ export async function getCRecordView(
   await file.read(crecord);
   return crview;
   async function getCRecordOffset(
-    file: Deno.FsFile,
+    file: File,
   ): Promise<FsOffset | null> {
     const u8s = new Uint8Array(4);
     const view = new DataView(u8s.buffer);

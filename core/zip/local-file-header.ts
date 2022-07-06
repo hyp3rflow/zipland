@@ -1,4 +1,5 @@
 import { ZIP_LOCAL_FILE_HEADER } from "./const.ts";
+import { File } from "../types.ts";
 
 export interface LocalFileHeader {
   signature: number;
@@ -13,7 +14,7 @@ export interface LocalFileHeader {
   fileNameLength: number;
   extraFieldLength: number;
 }
-export async function getLFHeaderView(file: Deno.FsFile, offset: number) {
+export async function getLFHeaderView(file: File, offset: number) {
   const temp = new Uint8Array(ZIP_LOCAL_FILE_HEADER.MIN_LENGTH);
   const tempView = new DataView(temp.buffer);
   await file.seek(offset, Deno.SeekMode.Start);

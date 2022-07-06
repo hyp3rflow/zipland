@@ -1,4 +1,5 @@
 import { ZIP_CENTRAL_DIRECTORY } from "./const.ts";
+import { File } from "../types.ts";
 
 export interface CentralDirectoryFileHeader {
   name: string;
@@ -8,7 +9,7 @@ export interface CentralDirectoryFileHeader {
   uncompressedSize: number;
 }
 export async function getCDirView(
-  file: Deno.FsFile,
+  file: File,
   offset: number,
 ): Promise<DataView> {
   const temp = new Uint8Array(ZIP_CENTRAL_DIRECTORY.MIN_LENGTH);

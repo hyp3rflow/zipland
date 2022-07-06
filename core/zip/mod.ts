@@ -1,6 +1,7 @@
 import { LimitedReader } from "https://deno.land/std@0.146.0/io/readers.ts";
 import { readAll } from "https://deno.land/std@0.146.0/streams/conversion.ts";
 import { ZIP_LOCAL_FILE_HEADER } from "./const.ts";
+import { File } from "../types.ts";
 import {
   CentralDirectoryFileHeader,
   getCDirectoryObject,
@@ -22,7 +23,7 @@ export interface ZipInfo {
 }
 
 export async function disassembleZip(
-  file: Deno.FsFile,
+  file: File,
 ): Promise<ZipFiles | null> {
   const crview = await getCRecordView(file);
   if (!crview) return null;
@@ -40,7 +41,7 @@ export async function disassembleZip(
 }
 
 async function getZipInfos(
-  file: Deno.FsFile,
+  file: File,
   cdirs: CentralDirectoryFileHeader[],
 ): Promise<ZipInfo[]> {
   const zipinfos: ZipInfo[] = [];
@@ -68,7 +69,7 @@ export interface ZipFile {
 }
 export type ZipFiles = Map<string, ZipFile>;
 async function getZipFiles(
-  file: Deno.FsFile,
+  file: File,
   zipinfos: ZipInfo[],
 ): Promise<ZipFiles> {
   const zipfiles: Map<string, ZipFile> = new Map();
