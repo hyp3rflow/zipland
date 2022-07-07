@@ -77,7 +77,7 @@ async function getZipFiles(
     await file.seek(zipinfo.offset, Deno.SeekMode.Start);
     const reader = new LimitedReader(file, zipinfo.compressed);
     const data = await readAll(reader);
-    zipfiles.set(zipinfo.name, {
+    zipfiles.set("/" + zipinfo.name, {
       compressed: zipinfo.compression === 8,
       data,
       info: zipinfo,

@@ -39,14 +39,19 @@ export async function serveZipFiles(
         throw new Deno.errors.NotFound();
       }
     }
-    if (normalizedPath.startsWith("/")) {
-      normalizedPath = normalizedPath.replace("/", "");
-    }
     if (opts.fsRoot) {
       normalizedPath = opts.fsRoot + "/" + normalizedPath;
     }
     if (zipfiles.has(normalizedPath)) {
       response = await serveZipFile(req, zipfiles.get(normalizedPath)!);
+    } else if (
+      normalizedPath.endsWith("/") &&
+      zipfiles.has(normalizedPath + "index.html")
+    ) {
+      response = await serveZipFile(
+        req,
+        zipfiles.get(normalizedPath + "index.html")!,
+      );
     } else {
       throw new Deno.errors.NotFound();
     }
